@@ -2,6 +2,8 @@ use async_openai::{Client, config::OpenAIConfig};
 use clap::Parser;
 use serde_json::{Value, json};
 use std::{env, process};
+mod tools;
+use tools::read_tool;
 
 #[derive(Parser)]
 #[command(author, version, about)]
@@ -13,6 +15,7 @@ struct Args {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
+    let read_tool = read_tool();
 
     let base_url = env::var("OPENROUTER_BASE_URL")
         .unwrap_or_else(|_| "https://openrouter.ai/api/v1".to_string());
@@ -35,14 +38,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             "messages": [
                 {
                     "role": "user",
-                    "content": args.prompt
-                }
+                    "content": args.prompt,
+                },
             ],
             "model": "anthropic/claude-haiku-4.5",
+            "tools": [read_tool]
         }))
         .await?;
-
-    eprintln!("Logs from your program will appear here!");
 
     if let Some(content) = response["choices"][0]["message"]["content"].as_str() {
         println!("{}", content);
