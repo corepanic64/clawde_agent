@@ -55,41 +55,38 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     Some(a) => {
                         let args = from_str::<Value>(a);
                         match args {
-                            Ok(b) => {
-                                let m = b.as_object();
+                            Ok(v) => {
+                                let m = v.as_object();
                                 match m {
                                     Some(f) => {
                                         let p = f.get("file_path");
                                         match p {
                                             Some(w) => {
-                                                let pa = w.as_str();
-                                                match pa {
-                                                    Some(q) => {
-                                                        let c = std::fs::read_to_string(q);
+                                                let path = w.as_str();
+                                                match path {
+                                                    Some(r) => {
+                                                        let c = std::fs::read_to_string(r);
                                                         match c {
                                                             Ok(r) => println!("{r}"),
-                                                            Err(e) => {}
+                                                            Err(e) => {
+                                                                println!("Error in reading content")
+                                                            }
                                                         }
                                                     }
-                                                    None => {}
+                                                    None => println!("Error in reading path"),
                                                 }
                                             }
-                                            None => {}
+                                            None => println!("Error in getting path from map"),
                                         }
                                     }
-                                    None => {}
+                                    None => println!("Error in parsing map"),
                                 }
                             }
-                            Err(e) => {}
+                            Err(e) => println!("Error in parsing args"),
                         }
                     }
-                    None => {}
+                    None => println!("Error in parsing tool: {}", e),
                 }
-                // let args = from_str::<Value>();
-                // let args = args.as_object().unwrap();
-                // let path = args.get("file_path").unwrap();
-                // let content = std::fs::read_to_string(path.as_str().unwrap()).unwrap();
-                // println!("{content}")
             }
             _ => {}
         }
