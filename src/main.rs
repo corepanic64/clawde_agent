@@ -1,6 +1,6 @@
 use async_openai::{Client, config::OpenAIConfig};
 use clap::Parser;
-use serde_json::{Value, json};
+use serde_json::{Value, from_str, json};
 use std::{env, process};
 mod tools;
 use tools::read_tool;
@@ -46,7 +46,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }))
         .await?;
 
-    if let Some(content) = response["choices"][0]["message"]["content"].as_str() {
+    if let Some(tool) = response["choices"][0]["message"]["tool_calls"].get(0) {
+        let read_name = tool["function"]["name"].as_str().unwrap();
+        match read_name {
+            "Read" => {
+                let args = from_str::<Value>(tool["function"]["arguments"].as_str().unwrap())?;
+                let args = args.as_object().unwrap();
+                let path = args.get("file_path").unwrap();
+                let content = std::fs::read_to_string(path.as_str().unwrap()).unwrap();
+                println!("{content}")
+            }
+            _ => {}
+        }
+    } else if let Some(content) = response["choices"][0]["message"]["content"].as_str() {
         println!("{}", content);
     }
 
