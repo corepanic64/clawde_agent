@@ -50,11 +50,46 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let read_name = tool["function"]["name"].as_str().unwrap();
         match read_name {
             "Read" => {
-                let args = from_str::<Value>(tool["function"]["arguments"].as_str().unwrap())?;
-                let args = args.as_object().unwrap();
-                let path = args.get("file_path").unwrap();
-                let content = std::fs::read_to_string(path.as_str().unwrap()).unwrap();
-                println!("{content}")
+                let t = tool["function"]["arguments"].as_str();
+                match t {
+                    Some(a) => {
+                        let args = from_str::<Value>(a);
+                        match args {
+                            Ok(b) => {
+                                let m = b.as_object();
+                                match m {
+                                    Some(f) => {
+                                        let p = f.get("file_path");
+                                        match p {
+                                            Some(w) => {
+                                                let pa = w.as_str();
+                                                match pa {
+                                                    Some(q) => {
+                                                        let c = std::fs::read_to_string(q);
+                                                        match c {
+                                                            Ok(r) => println!("{r}"),
+                                                            Err(e) => {}
+                                                        }
+                                                    }
+                                                    None => {}
+                                                }
+                                            }
+                                            None => {}
+                                        }
+                                    }
+                                    None => {}
+                                }
+                            }
+                            Err(e) => {}
+                        }
+                    }
+                    None => {}
+                }
+                // let args = from_str::<Value>();
+                // let args = args.as_object().unwrap();
+                // let path = args.get("file_path").unwrap();
+                // let content = std::fs::read_to_string(path.as_str().unwrap()).unwrap();
+                // println!("{content}")
             }
             _ => {}
         }
