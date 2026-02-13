@@ -109,3 +109,54 @@ pub fn write_tool() -> WriteTool {
         },
     };
 }
+
+#[derive(serde::Serialize)]
+pub struct BashTool {
+    r#type: &'static str,
+    function: BashToolFunc,
+}
+
+#[derive(serde::Serialize)]
+pub struct BashToolFunc {
+    name: &'static str,
+    description: &'static str,
+    parameters: BashToolParams,
+}
+
+#[derive(serde::Serialize)]
+pub struct BashToolParams {
+    r#type: &'static str,
+    required: Vec<&'static str>,
+    properties: BashToolProps,
+}
+
+#[derive(serde::Serialize)]
+pub struct BashToolProps {
+    command: BashToolCommand,
+}
+
+#[derive(serde::Serialize)]
+pub struct BashToolCommand {
+    r#type: &'static str,
+    description: &'static str,
+}
+
+pub fn bash_tool() -> BashTool {
+    return BashTool {
+        r#type: "function",
+        function: BashToolFunc {
+            name: "Bash",
+            description: "Execute a shell command",
+            parameters: BashToolParams {
+                r#type: "object",
+                required: vec!["command"],
+                properties: BashToolProps {
+                    command: BashToolCommand {
+                        r#type: "string",
+                        description: "The command to execute",
+                    },
+                },
+            },
+        },
+    };
+}
