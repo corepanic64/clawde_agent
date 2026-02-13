@@ -76,6 +76,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                     "content": content
                             }));
                         }
+                        "Write" => {
+                            let args = from_str::<Value>(func_args)?;
+                            let args = args.as_object().unwrap();
+                            let path = args.get("file_path").unwrap().as_str().unwrap();
+                            let content = args.get("content").unwrap().as_str().unwrap();
+                            std::fs::write(path, content)?;
+                            msgs.push(json!({
+                                    "role": "tool",
+                                    "tool_call_id": id,
+                                    "content":""
+                            }));
+                        }
                         _ => println!(
                             "Well it looks like your tool is not Read buddy. The name (long pause) is the Rustagen(t)"
                         ),
