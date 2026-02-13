@@ -30,69 +30,74 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with_api_key(api_key);
 
     let client = Client::with_config(config);
+    let mut msgs: Vec<Value> = vec![];
 
-    #[allow(unused_variables)]
-    let response: Value = client
-        .chat()
-        .create_byot(json!({
-            "messages": [
-                {
-                    "role": "user",
-                    "content": args.prompt,
-                },
-            ],
-            "model": "anthropic/claude-haiku-4.5",
-            "tools": [read_tool]
-        }))
-        .await?;
-
-    if let Some(tool) = response["choices"][0]["message"]["tool_calls"].get(0) {
-        let read_name = tool["function"]["name"].as_str().unwrap();
-        match read_name {
-            "Read" => {
-                let t = tool["function"]["arguments"].as_str();
-                match t {
-                    Some(a) => {
-                        let args = from_str::<Value>(a);
-                        match args {
-                            Ok(v) => {
-                                let m = v.as_object();
-                                match m {
-                                    Some(f) => {
-                                        let p = f.get("file_path");
-                                        match p {
-                                            Some(w) => {
-                                                let path = w.as_str();
-                                                match path {
-                                                    Some(r) => {
-                                                        let c = std::fs::read_to_string(r);
-                                                        match c {
-                                                            Ok(r) => println!("{r}"),
-                                                            Err(e) => {
-                                                                println!("Error in reading content")
-                                                            }
-                                                        }
-                                                    }
-                                                    None => println!("Error in reading path"),
-                                                }
-                                            }
-                                            None => println!("Error in getting path from map"),
-                                        }
-                                    }
-                                    None => println!("Error in parsing map"),
-                                }
-                            }
-                            Err(e) => println!("Error in parsing args"),
-                        }
-                    }
-                    None => println!("Error in parsing tool: {}", e),
-                }
-            }
-            _ => {}
+    msgs.push(json!(
+        {
+            "role": "user",
+            "content": args.prompt,
         }
-    } else if let Some(content) = response["choices"][0]["message"]["content"].as_str() {
-        println!("{}", content);
-    }
+    ));
 
+    loop {
+        let response: Value = client
+            .chat()
+            .create_byot(json!({
+                "messages": msgs,
+                "model": "anthropic/claude-haiku-4.5",
+                "tools": [read_tool]
+            }))
+            .await?;
+        let message = &response["choices"][0]["message"];
+
+        let assistant_msg = json!({
+            "role": "assistant",
+            "content": message.get("content"),
+            "tool_calls": message.get("tool_calls"),
+        });
+        msgs.push(assistant_msg);
+
+        if let Some(choices) = response["tool_calls"].get(0) {
+            let read_name = choices["function"]["name"].as_str().unwrap();
+            let c = from_str::<Value>(choices.get(0).unwrap().as_str().unwrap())?;
+            let b = c.as_object().unwrap();
+            let id = b["id"].clone();
+            match read_name {
+                "Read" => {
+                    let args =
+                        from_str::<Value>(choices["function"]["arguments"].as_str().unwrap())?;
+                    let args = args.as_object().unwrap();
+                    let path = args.get("file_path").unwrap();
+                    let content = std::fs::read_to_string(path.as_str().unwrap()).unwrap();
+                    msgs.push(json!(
+                        {
+                            "role": "assistant",
+                            "tool_call_id": id,
+                            "content": content
+                        }
+                    ));
+                    println!("{content}");
+                    break;
+                }
+                _ => {}
+            }
+        } else if let Some(tool) = response["choices"][0]["message"]["tool_calls"].get(0) {
+            let read_name = tool["function"]["name"].as_str().unwrap();
+            match read_name {
+                "Read" => {
+                    let args = from_str::<Value>(tool["function"]["arguments"].as_str().unwrap())?;
+                    let args = args.as_object().unwrap();
+                    let path = args.get("file_path").unwrap();
+                    let content = std::fs::read_to_string(path.as_str().unwrap()).unwrap();
+                    println!("{content}");
+                    break;
+                }
+                _ => {}
+            }
+        } else if let Some(content) = response["choices"][0]["message"]["content"].as_str() {
+            println!("{}", content);
+            break;
+        }
+    }
     Ok(())
 }
