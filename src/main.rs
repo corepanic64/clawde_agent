@@ -57,29 +57,29 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         });
         msgs.push(assistant_msg);
 
-        if let Some(choices) = response["tool_calls"].get(0) {
-            let read_name = choices["function"]["name"].as_str().unwrap();
-            let c = from_str::<Value>(choices.get(0).unwrap().as_str().unwrap())?;
-            let b = c.as_object().unwrap();
-            let id = b["id"].clone();
-            match read_name {
-                "Read" => {
-                    let args =
-                        from_str::<Value>(choices["function"]["arguments"].as_str().unwrap())?;
-                    let args = args.as_object().unwrap();
-                    let path = args.get("file_path").unwrap();
-                    let content = std::fs::read_to_string(path.as_str().unwrap()).unwrap();
-                    msgs.push(json!(
-                        {
-                            "role": "assistant",
-                            "tool_call_id": id,
-                            "content": content
+        if let Some(choices) = message["tool_calls"].as_array() {
+            if !choices.is_empty() {
+                for tool_call in choices {
+                    let id = tool_call["id"].as_str().unwrap();
+                    let func_name = tool_call["function"]["name"].as_str().unwrap();
+                    let func_args = tool_call["function"]["arguments"].as_str().unwrap();
+                    match func_name {
+                        "Read" => {
+                            let args = from_str::<Value>(func_args)?;
+                            let args = args.as_object().unwrap();
+                            let path = args.get("file_path").unwrap().as_str().unwrap();
+                            let content = std::fs::read_to_string(path)?;
+                            msgs.push(json!({
+                                    "role": "tool",
+                                    "tool_call_id": id,
+                                    "content": content
+                            }));
                         }
-                    ));
-                    println!("{content}");
-                    break;
+                        _ => println!(
+                            "Well it looks like your tool is not Read buddy. The name (long pause) is the Rustagen(t)"
+                        ),
+                    }
                 }
-                _ => {}
             }
         } else if let Some(tool) = response["choices"][0]["message"]["tool_calls"].get(0) {
             let read_name = tool["function"]["name"].as_str().unwrap();
