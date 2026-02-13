@@ -66,7 +66,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     let id = tool_call["id"].as_str().unwrap();
                     let func_name = tool_call["function"]["name"].as_str().unwrap();
                     let func_args = tool_call["function"]["arguments"].as_str().unwrap();
-                    let func_params = tool_call["function"]["parameters"].as_str().unwrap();
+                    // let func_params = tool_call["function"]["parameters"].as_str().unwrap();
                     match func_name {
                         "Read" => {
                             let args = from_str::<Value>(func_args)?;
@@ -92,14 +92,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             }));
                         }
                         "Bash" => {
-                            let args = from_str::<Value>(func_params)?;
+                            let args = from_str::<Value>(func_args)?;
                             let args = args.as_object().unwrap();
-                            let command = args.get("required").unwrap().as_str().unwrap();
-                            Command::new(command);
+                            let command = args.get("command").unwrap().as_str().unwrap();
+                            let output = Command::new("sh").arg("-c").arg(command).output()?;
+                            let content = if output.status.success() {
+                                output.stdout
+                            } else {
+                                output.stderr
+                            };
                             msgs.push(json!({
                                     "role": "tool",
                                     "tool_call_id": id,
-                                    "content":""
+                                    "content": String::from_utf8(content)?
                             }));
                         }
                         _ => println!(
