@@ -1,35 +1,35 @@
 #[derive(serde::Serialize)]
-pub struct Read<'a> {
-    r#type: &'a str,
-    function: ToolFunc<'a>,
+pub struct Read {
+    r#type: &'static str,
+    function: ToolFunc,
 }
 
 #[derive(serde::Serialize)]
-pub struct ToolFunc<'a> {
-    name: &'a str,
-    description: &'a str,
-    parameters: ToolParams<'a>,
+pub struct ToolFunc {
+    name: &'static str,
+    description: &'static str,
+    parameters: ToolParams,
 }
 
 #[derive(serde::Serialize)]
-pub struct ToolParams<'a> {
-    r#type: &'a str,
-    properties: ToolProps<'a>,
-    requierd: Vec<&'a str>,
+pub struct ToolParams {
+    r#type: &'static str,
+    properties: ToolProps,
+    requierd: Vec<&'static str>,
 }
 
 #[derive(serde::Serialize)]
-pub struct ToolProps<'a> {
-    file_path: ToolFile<'a>,
+pub struct ToolProps {
+    file_path: ToolFile,
 }
 
 #[derive(serde::Serialize)]
-pub struct ToolFile<'a> {
-    r#type: &'a str,
-    description: &'a str,
+pub struct ToolFile {
+    r#type: &'static str,
+    description: &'static str,
 }
 
-pub fn read_tool<'a>() -> Read<'a> {
+pub fn read_tool() -> Read {
     return Read {
         r#type: "function",
         function: ToolFunc {
@@ -44,6 +44,67 @@ pub fn read_tool<'a>() -> Read<'a> {
                     },
                 },
                 requierd: vec!["file_path"],
+            },
+        },
+    };
+}
+
+#[derive(serde::Serialize)]
+pub struct WriteTool {
+    r#type: &'static str,
+    function: WriteToolFunc,
+}
+
+#[derive(serde::Serialize)]
+pub struct WriteToolFunc {
+    name: &'static str,
+    description: &'static str,
+    parameters: WriteToolParams,
+}
+#[derive(serde::Serialize)]
+pub struct WriteToolParams {
+    r#type: &'static str,
+    required: Vec<&'static str>,
+    properties: WriteToolProps,
+}
+
+#[derive(serde::Serialize)]
+pub struct WriteToolProps {
+    file_path: WriteToolPropsFilePath,
+    content: WriteToolPropsContent,
+}
+
+#[derive(serde::Serialize)]
+pub struct WriteToolPropsFilePath {
+    r#type: &'static str,
+    description: &'static str,
+}
+
+#[derive(serde::Serialize)]
+pub struct WriteToolPropsContent {
+    r#type: &'static str,
+    description: &'static str,
+}
+
+pub fn write_tool() -> WriteTool {
+    return WriteTool {
+        r#type: "function",
+        function: WriteToolFunc {
+            name: "Write",
+            description: "Write content to a file",
+            parameters: WriteToolParams {
+                r#type: "object",
+                required: vec!["file_path", "content"],
+                properties: WriteToolProps {
+                    file_path: WriteToolPropsFilePath {
+                        r#type: "string",
+                        description: "The path of the file to write to",
+                    },
+                    content: WriteToolPropsContent {
+                        r#type: "string",
+                        description: "The content to write to the file",
+                    },
+                },
             },
         },
     };

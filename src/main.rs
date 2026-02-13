@@ -3,7 +3,7 @@ use clap::Parser;
 use serde_json::{Value, from_str, json};
 use std::{env, process};
 mod tools;
-use tools::read_tool;
+use tools::{read_tool, write_tool};
 
 #[derive(Parser)]
 #[command(author, version, about)]
@@ -16,6 +16,7 @@ struct Args {
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
     let read_tool = read_tool();
+    let write_tool = write_tool();
 
     let base_url = env::var("OPENROUTER_BASE_URL")
         .unwrap_or_else(|_| "https://openrouter.ai/api/v1".to_string());
@@ -45,7 +46,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             .create_byot(json!({
                 "messages": msgs,
                 "model": "anthropic/claude-haiku-4.5",
-                "tools": [read_tool]
+                "tools": [read_tool, write_tool]
             }))
             .await?;
         let message = &response["choices"][0]["message"];
